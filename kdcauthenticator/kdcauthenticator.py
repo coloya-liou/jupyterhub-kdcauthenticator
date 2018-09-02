@@ -69,19 +69,13 @@ class KDCCallbackHandler(BaseHandler):
             token = ''.join(header.split()[1:])
             result = yield self.authenticator.get_authenticated_user(self, token)
 
-            username = None
-            rc = None
-            if ":" in result:
-                rc, username = result.split(':')
-            elif result != None:
-                rc = result
-
+            username = result['name']
+            rc = result['auth_state']
             if rc.upper() == "KERBEROS.AUTH_GSS_COMPLETE":
                 self.log.info("kerberos.AUTH_GSS_COMPLETE: Username= " + username)
                 if username:
-                    userId = username.split("@")[0]
-                    self.log.info("User = " + userId)
-                    user = self.user_from_username(userId)
+                    self.log.info("User = " + username)
+                    user = self.user_from_username(username)
                     already_running = False
                     if user.spawner:
                         status = yield user.spawner.poll()
@@ -144,15 +138,15 @@ class KDCAuthenticator(LocalAuthenticator):
             self.log.info("kerberos.authGSSServerInit")
             if rc != kerberos.AUTH_GSS_COMPLETE:
                 return None
-
+                
             rc = kerberos.authGSSServerStep(state, data)
             self.log.info("kerberos.authGSSServerStep")
             if rc == kerberos.AUTH_GSS_COMPLETE:
-                user = kerberos.authGSSServerUserName(state)
+                user = kerberos.authGSSServerUserName(state).split("@")[0]
                 self.log.info("Extracted User = " + user)
-                return "kerberos.AUTH_GSS_COMPLETE:" + user
+                return {'name': user, 'auth_state': 'kerberos.AUTH_GSS_COMPLETE'}
             elif rc == kerberos.AUTH_GSS_CONTINUE:
-                return "kerberos.AUTH_GSS_CONTINUE"
+                return {'name': None, 'auth_state': 'kerberos.AUTH_GSS_CONTINUE'}
             else:
                 self.log.info("return None")
                 return None
