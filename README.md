@@ -30,6 +30,10 @@ KDC authenticator allows to authenticate the JuypterHub user using Kerberos prot
     c.LocalAuthenticator.add_user_cmd = ['adduser', '-m']
     c.LocalAuthenticator.create_system_users = True
     ```
+    Optionally add the following line to automatically login users.
+    ```
+    c.LocalAuthenticator.auto_login = True
+    ```
 
 3. The Service principal for JupyterHub authenticator is configured to "HTTP" but can be configured by -
 
